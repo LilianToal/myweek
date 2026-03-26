@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="My Week">
+<title>My Week</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f9fafb;color:#111;min-height:100vh;padding-bottom:40px}
+.header{background:#111;color:#fff;padding:18px 16px 14px;position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:20px;font-weight:700}
+.header p{font-size:12px;color:#9ca3af;margin-top:2px}
+.header-key{font-size:11px;color:#9ca3af;cursor:pointer;text-decoration:underline;white-space:nowrap;margin-left:12px}
+.tabs{display:flex;gap:8px;padding:10px 16px;background:#fff;border-bottom:1px solid #e5e7eb;position:sticky;top:58px;z-index:19;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:7px 14px;border-radius:20px;border:none;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;transition:all .2s}
+.tab.active{background:#111;color:#fff}
+.tab.inactive{background:#f3f4f6;color:#374151}
+.days{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;scrollbar-width:none;background:#fff;border-bottom:1px solid #e5e7eb;position:sticky;top:103px;z-index:18}
+.days::-webkit-scrollbar{display:none}
+.day-btn{padding:6px 13px;border-radius:20px;border:2px solid;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;transition:all .2s}
+.day-btn.active{background:#111;color:#fff;border-color:#111}
+.day-btn.inactive{background:#fff;color:#374151;border-color:#e5e7eb}
+.legend{display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px;background:#fff;border-bottom:1px solid #e5e7eb}
+.schedule{padding:12px 16px;display:flex;flex-direction:column;gap:6px}
+.block{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border-left:4px solid;cursor:pointer;transition:opacity .2s}
+.block:active{opacity:.7}
+.block-time{font-size:11px;font-weight:600;min-width:95px;font-variant-numeric:tabular-nums}
+.block-label{font-size:13px;font-weight:500;flex:1}
+.block-edit{font-size:16px;opacity:.4}
+.add-btn{margin:8px 16px 0;padding:12px;border-radius:10px;border:2px dashed #d1d5db;background:transparent;color:#6b7280;font-size:14px;font-weight:600;cursor:pointer;width:calc(100% - 32px)}
+.planner{padding:16px}
+.dump-box{background:#fff;border-radius:12px;padding:16px;border:1px solid #e5e7eb;margin-bottom:16px}
+.dump-box h2{font-size:15px;font-weight:700;margin-bottom:6px}
+.dump-box p{font-size:12px;color:#6b7280;margin-bottom:12px;line-height:1.5}
+.no-key-notice{background:#fef3c7;border:1px solid #f59e0b;border-radius:10px;padding:12px;margin-bottom:14px;font-size:13px;color:#92400e;line-height:1.5}
+.no-key-notice a{color:#92400e;font-weight:700;cursor:pointer}
+textarea{width:100%;min-height:130px;border-radius:8px;border:1px solid #d1d5db;padding:10px;font-size:14px;resize:vertical;font-family:inherit;line-height:1.6;color:#111;background:#fafafa}
+textarea:focus{outline:none;border-color:#111;background:#fff}
+.plan-btn{margin-top:10px;width:100%;padding:12px;border-radius:10px;border:none;cursor:pointer;background:#111;color:#fff;font-weight:700;font-size:15px}
+.plan-btn:disabled{background:#d1d5db;cursor:default}
+.result{background:#f0fdf4;border-radius:12px;padding:16px;border:1px solid #86efac}
+.result h2{font-size:15px;font-weight:700;color:#065f46;margin-bottom:10px}
+.result-text{font-size:14px;color:#111;line-height:1.8;white-space:pre-wrap}
+.intentions-section{padding:16px}
+.intentions-section h2{font-size:16px;font-weight:700;margin-bottom:4px}
+.intentions-section p{font-size:12px;color:#6b7280;margin-bottom:14px}
+.intention-card{background:#fff;border-radius:12px;border:1px solid #e5e7eb;margin-bottom:12px;overflow:hidden}
+.intention-header{padding:12px 14px;font-size:14px;font-weight:700;background:#f9fafb;border-bottom:1px solid #e5e7eb}
+.intention-body{padding:12px 14px}
+.intention-body textarea{min-height:70px;font-size:13px;border:1px solid #e5e7eb;background:#fff}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:20px 20px 0 0;padding:20px 16px 36px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
+.modal h2{font-size:17px;font-weight:700;margin-bottom:16px}
+.modal label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:4px;margin-top:12px}
+.modal input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #d1d5db;font-size:14px;font-family:inherit;color:#111}
+.modal input:focus{outline:none;border-color:#111}
+.modal .hint{font-size:11px;color:#6b7280;margin-top:4px;line-height:1.5}
+.color-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px}
+.color-opt{padding:8px 4px;border-radius:8px;border:2px solid transparent;text-align:center;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s}
+.color-opt.selected{border-color:#111}
+.modal-btns{display:flex;gap:8px;margin-top:20px}
+.modal-btn{flex:1;padding:12px;border-radius:10px;border:none;font-size:14px;font-weight:700;cursor:pointer}
+.modal-btn.primary{background:#111;color:#fff}
+.modal-btn.danger{background:#fee2e2;color:#dc2626}
+.modal-btn.secondary{background:#f3f4f6;color:#374151}
+.hidden{display:none}
+.work{background:#dbeafe;border-color:#3b82f6;color:#1e40af}
+.alignment{background:#fef3c7;border-color:#f59e0b;color:#92400e}
+.yoga{background:#d1fae5;border-color:#10b981;color:#065f46}
+.pilates{background:#ede9fe;border-color:#8b5cf6;color:#4c1d95}
+.connection{background:#fce7f3;border-color:#ec4899;color:#9d174d}
+.personal{background:#f3f4f6;border-color:#9ca3af;color:#374151}
+.sleep{background:#e0f2fe;border-color:#0284c7;color:#0c4a6e}
+.meal{background:#ffedd5;border-color:#f97316;text:#7c2d12}
+.downtime{background:#fdf4ff;border-color:#d946ef;color:#701a75}
+.finance{background:#ecfdf5;border-color:#059669;color:#064e3b}
+.home{background:#fff7ed;border-color:#ea580c;color:#7c2d12}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>My Week</h1>
+    <p>Your life, structured with intention</p>
+  </div>
+  <span class="header-key" onclick="openKeyModal()">⚙️ API Key</span>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('schedule')">📅 Schedule</button>
+  <button class="tab inactive" onclick="switchTab('intentions')">🎯 Intentions</button>
+  <button class="tab inactive" onclick="switchTab('planner')">🧠 Brain Dump</button>
+</div>
+
+<div id="schedule-view">
+  <div class="days" id="day-buttons"></div>
+  <div class="legend" id="legend"></div>
+  <div class="schedule" id="schedule-blocks"></div>
+  <button class="add-btn" onclick="openModal(null)">+ Add block</button>
+</div>
+
+<div id="intentions-view" class="hidden intentions-section">
+  <h2>🎯 Weekly Intentions</h2>
+  <p>Set your focus for the week across each area of your life.</p>
+  <div id="intentions-cards"></div>
+</div>
+
+<div id="planner-view" class="hidden planner">
+  <div class="dump-box">
+    <h2>🧠 Brain Dump</h2>
+    <p>Write everything coming up this week — meetings, errands, goals, people to reach out to. Don't organise it, just dump it.</p>
+    <div id="no-key-notice" class="no-key-notice hidden">
+      No API key set yet. <a onclick="openKeyModal()">Tap here to add yours</a> — takes 30 seconds and costs pennies per use.
+    </div>
+    <textarea id="brain-input" placeholder="e.g. coffee with the influencer downstairs, apply for that role, finish alignment module 3, call mum, book dentist..."></textarea>
+    <button class="plan-btn" id="plan-btn" onclick="planWeek()">✨ Plan my week</button>
+  </div>
+  <div class="result hidden" id="result-box">
+    <h2>Your Week, Planned</h2>
+    <div class="result-text" id="result-text"></div>
+  </div>
+</div>
+
+<!-- Block edit modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <h2 id="modal-title">Add Block</h2>
+    <label>Time</label>
+    <input type="text" id="m-time" placeholder="e.g. 06:00–07:00">
+    <label>Label</label>
+    <input type="text" id="m-label" placeholder="e.g. Pilates class 🏋️">
+    <label>Category</label>
+    <div class="color-grid" id="color-grid"></div>
+    <div class="modal-btns">
+      <button class="modal-btn secondary" onclick="closeModal()">Cancel</button>
+      <button class="modal-btn danger hidden" id="delete-btn" onclick="deleteBlock()">Delete</button>
+      <button class="modal-btn primary" onclick="saveBlock()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- API key modal -->
+<div class="modal-overlay" id="key-modal-overlay" onclick="closeKeyModalOutside(event)">
+  <div class="modal">
+    <h2>🔑 Claude API Key</h2>
+    <label>Your Anthropic API Key</label>
+    <input type="password" id="api-key-input" placeholder="sk-ant-...">
+    <p class="hint">Get your key at <strong>console.anthropic.com</strong> → API Keys. Add $5 credit — it'll last months for personal use. Your key is stored only on this device and never shared.</p>
+    <div class="modal-btns">
+      <button class="modal-btn secondary" onclick="closeKeyModal()">Cancel</button>
+      <button class="modal-btn danger" onclick="clearKey()">Clear Key</button>
+      <button class="modal-btn primary" onclick="saveKey()">Save Key</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLORS={
+  work:{bg:"#dbeafe",border:"#3b82f6",text:"#1e40af",label:"Work"},
+  alignment:{bg:"#fef3c7",border:"#f59e0b",text:"#92400e",label:"Alignment"},
+  yoga:{bg:"#d1fae5",border:"#10b981",text:"#065f46",label:"Yoga"},
+  pilates:{bg:"#ede9fe",border:"#8b5cf6",text:"#4c1d95",label:"Pilates"},
+  connection:{bg:"#fce7f3",border:"#ec4899",text:"#9d174d",label:"Connection"},
+  personal:{bg:"#f3f4f6",border:"#9ca3af",text:"#374151",label:"Personal"},
+  sleep:{bg:"#e0f2fe",border:"#0284c7",text:"#0c4a6e",label:"Sleep"},
+  meal:{bg:"#ffedd5",border:"#f97316",text:"#7c2d12",label:"Meal"},
+  downtime:{bg:"#fdf4ff",border:"#d946ef",text:"#701a75",label:"Down Time"},
+  finance:{bg:"#ecfdf5",border:"#059669",text:"#064e3b",label:"Finance"},
+  home:{bg:"#fff7ed",border:"#ea580c",text:"#7c2d12",label:"Home"},
+};
+
+const INTENTION_AREAS=["Work","Alignment","Movement","Connection","Personal","Finance"];
+const DAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+
+const DEFAULT_SCHEDULE={
+  Mon:[
+    {time:"05:30–05:45",label:"Morning meditation 🧘",color:"yoga"},
+    {time:"05:45–06:00",label:"Morning journal ✍️",color:"yoga"},
+    {time:"06:00–07:00",label:"Pilates class 🏋️",color:"pilates"},
+    {time:"07:00–07:30",label:"Get ready",color:"personal"},
+    {time:"07:30–08:30",label:"Commute 🚇",color:"personal"},
+    {time:"08:30–09:00",label:"Settle in",color:"personal"},
+    {time:"09:00–18:00",label:"Accenture Work 🏢",color:"work"},
+    {time:"18:00–19:30",label:"Dinner & decompress",color:"meal"},
+    {time:"19:30–21:00",label:"Evening (intentional)",color:"personal"},
+    {time:"21:00–21:15",label:"Evening meditation 🧘",color:"yoga"},
+    {time:"21:15–21:30",label:"Evening journal ✍️",color:"yoga"},
+    {time:"21:30–22:00",label:"Wind down",color:"personal"},
+    {time:"22:00–05:30",label:"Sleep 7.5hrs",color:"sleep"},
+  ],
+  Tue:[
+    {time:"05:30–05:45",label:"Morning meditation 🧘",color:"yoga"},
+    {time:"05:45–06:00",label:"Morning journal ✍️",color:"yoga"},
+    {time:"06:00–07:00",label:"Pilates class 🏋️",color:"pilates"},
+    {time:"07:00–07:30",label:"Get ready",color:"personal"},
+    {time:"07:30–08:30",label:"Commute 🚇",color:"personal"},
+    {time:"08:30–09:00",label:"Settle in",color:"personal"},
+    {time:"09:00–18:00",label:"Accenture Work 🏢",color:"work"},
+    {time:"18:00–19:30",label:"Dinner & decompress",color:"meal"},
+    {time:"19:30–21:00",label:"Evening (intentional)",color:"personal"},
+    {time:"21:00–21:15",label:"Evening meditation 🧘",color:"yoga"},
+    {time:"21:15–21:30",label:"Evening journal ✍️",color:"yoga"},
+    {time:"21:30–22:00",label:"Wind down",color:"personal"},
+    {time:"22:00–05:30",label:"Sleep 7.5hrs",color:"sleep"},
+  ],
+  Wed:[
+    {time:"05:30–05:45",label:"Morning meditation 🧘",color:"yoga"},
+    {time:"05:45–06:00",label:"Morning journal ✍️",color:"yoga"},
+    {time:"06:00–07:00",label:"Pilates class 🏋️",color:"pilates"},
+    {time:"07:00–08:00",label:"Alignment ✨",color:"alignment"},
+    {time:"08:00–09:00",label:"Get ready",color:"personal"},
+    {time:"09:00–18:00",label:"Accenture Work 🏠",color:"work"},
+    {time:"18:00–19:30",label:"Dinner & decompress",color:"meal"},
+    {time:"19:30–21:00",label:"Evening (intentional)",color:"personal"},
+    {time:"21:00–21:15",label:"Evening meditation 🧘",color:"yoga"},
+    {time:"21:15–21:30",label:"Evening journal ✍️",color:"yoga"},
+    {time:"21:30–22:00",label:"Wind down",color:"personal"},
+    {time:"22:00–05:30",label:"Sleep 7.5hrs",color:"sleep"},
+  ],
+  Thu:[
+    {time:"05:30–05:45",label:"Morning meditation 🧘",color:"yoga"},
+    {time:"05:45–06:00",label:"Morning journal ✍️",color:"yoga"},
+    {time:"06:00–07:00",label:"Pilates class 🏋️",color:"pilates"},
+    {time:"07:00–08:00",label:"Alignment ✨",color:"alignment"},
+    {time:"08:00–09:00",label:"Get ready",color:"personal"},
+    {time:"09:00–18:00",label:"Accenture Work 🏠",color:"work"},
+    {time:"18:00–19:30",label:"Dinner & decompress",color:"meal"},
+    {time:"19:30–21:00",label:"Evening (intentional)",color:"personal"},
+    {time:"21:00–21:15",label:"Evening meditation 🧘",color:"yoga"},
+    {time:"21:15–21:30",label:"Evening journal ✍️",color:"yoga"},
+    {time:"21:30–22:00",label:"Wind down",color:"personal"},
+    {time:"22:00–05:30",label:"Sleep 7.5hrs",color:"sleep"},
+  ],
+  Fri:[
+    {time:"05:30–05:45",label:"Morning meditation 🧘",color:"yoga"},
+    {time:"05:45–06:00",label:"Morning journal ✍️",color:"yoga"},
+    {time:"06:00–07:00",label:"Pilates class 🏋️",color:"pilates"},
+    {time:"07:00–08:00",label:"Alignment ✨",color:"alignment"},
+    {time:"08:00–09:00",label:"Get ready",color:"personal"},
+    {time:"09:00–18:00",label:"Accenture Work 🏠",color:"work"},
+    {time:"18:00–19:30",label:"Dinner & decompress",color:"meal"},
+    {time:"19:30–23:00",label:"Connection 🌟",color:"connection"},
+    {time:"23:00–05:30",label:"Sleep",color:"sleep"},
+  ],
+  Sat:[
+    {time:"06:00–06:15",label:"Morning meditation 🧘",color:"yoga"},
+    {time:"06:15–06:30",label:"Morning journal ✍️",color:"yoga"},
+    {time:"06:30–08:00",label:"Slow morning ☕",color:"personal"},
+    {time:"08:00–10:00",label:"Yoga class 🧘",color:"yoga"},
+    {time:"10:00–11:00",label:"House clean 🏠",color:"home"},
+    {time:"11:00–14:00",label:"Connection 🌟",color:"connection"},
+    {time:"14:00–15:00",label:"Lunch",color:"meal"},
+    {time:"15:00–19:00",label:"Pilates / personal time",color:"pilates"},
+    {time:"19:00–23:00",label:"Connection 🌟",color:"connection"},
+    {time:"23:00–06:00",label:"Sleep",color:"sleep"},
+  ],
+  Sun:[
+    {time:"06:00–06:15",label:"Morning meditation 🧘",color:"yoga"},
+    {time:"06:15–06:30",label:"Morning journal ✍️",color:"yoga"},
+    {time:"06:30–07:30",label:"Slow morning ☕",color:"personal"},
+    {time:"07:30–09:30",label:"Yoga teaching 🧘",color:"yoga"},
+    {time:"09:30–10:00",label:"Financial review 💰",color:"finance"},
+    {time:"10:00–11:30",label:"Meal prep 🥗",color:"meal"},
+    {time:"11:30–15:00",label:"⬇️ Down time — no schedule",color:"downtime"},
+    {time:"15:00–16:30",label:"Weekly review & brain dump",color:"alignment"},
+    {time:"16:30–19:00",label:"⬇️ Down time — no schedule",color:"downtime"},
+    {time:"19:00–20:00",label:"Prep & wind down",color:"personal"},
+    {time:"20:00–21:00",label:"Connection 🌟",color:"connection"},
+    {time:"21:00–21:15",label:"Evening meditation 🧘",color:"yoga"},
+    {time:"21:15–21:30",label:"Evening journal ✍️",color:"yoga"},
+    {time:"21:30–05:30",label:"Sleep 8hrs",color:"sleep"},
+  ],
+};
+
+const SYSTEM_PROMPT=`You are a compassionate life planning assistant. The user has a fixed weekly schedule and will give you a brain dump of things coming up this week. Suggest which day and time slot each item fits best. Flag any overloads kindly. Format: simple list, each item → suggested slot + one-line reason. End with one short encouraging sentence.
+
+Schedule: Mon–Tue office days (pilates 6am, commute, work 9-6). Wed–Fri WFH (pilates 6am, alignment 7am, work 9-6). Every morning: meditation+journal 5:30. Every evening: meditation+journal 9pm. Sat: yoga, house clean, connection. Sun: yoga teaching, financial review, meal prep, protected down time, weekly review. Friday evening + Saturday = connection time. Sunday is protected.`;
+
+// State
+let schedule=JSON.parse(localStorage.getItem('mw_schedule')||'null')||JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+let intentions=JSON.parse(localStorage.getItem('mw_intentions')||'{}');
+let activeDay='Mon';
+let editingIdx=null;
+let selectedColor='personal';
+
+function save(){
+  localStorage.setItem('mw_schedule',JSON.stringify(schedule));
+  localStorage.setItem('mw_intentions',JSON.stringify(intentions));
+}
+
+function getKey(){return localStorage.getItem('mw_apikey')||'';}
+
+// Tabs
+function switchTab(tab){
+  ['schedule','intentions','planner'].forEach((t,i)=>{
+    document.querySelectorAll('.tab')[i].className='tab '+(t===tab?'active':'inactive');
+    document.getElementById(t+'-view').classList.toggle('hidden',t!==tab);
+  });
+  if(tab==='intentions') renderIntentions();
+  if(tab==='planner') checkKeyNotice();
+}
+
+function checkKeyNotice(){
+  document.getElementById('no-key-notice').classList.toggle('hidden',!!getKey());
+}
+
+// Days
+function renderDays(){
+  document.getElementById('day-buttons').innerHTML=DAYS.map(d=>
+    `<button class="day-btn ${d===activeDay?'active':'inactive'}" onclick="selectDay('${d}')">${d}</button>`
+  ).join('');
+}
+function selectDay(d){activeDay=d;renderDays();renderSchedule();}
+
+// Legend
+function renderLegend(){
+  document.getElementById('legend').innerHTML=Object.entries(COLORS).map(([k,v])=>
+    `<span style="font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;border:1px solid;background:${v.bg};color:${v.text};border-color:${v.border}">${v.label}</span>`
+  ).join('');
+}
+
+// Schedule
+function renderSchedule(){
+  const blocks=schedule[activeDay]||[];
+  document.getElementById('schedule-blocks').innerHTML=blocks.map((b,i)=>{
+    const c=COLORS[b.color]||COLORS.personal;
+    return `<div class="block ${b.color}" onclick="openModal(${i})">
+      <span class="block-time">${b.time}</span>
+      <span class="block-label">${b.label}</span>
+      <span class="block-edit">✎</span>
+    </div>`;
+  }).join('');
+}
+
+// Block modal
+function openModal(idx){
+  editingIdx=idx;
+  const isEdit=idx!==null;
+  document.getElementById('modal-title').textContent=isEdit?'Edit Block':'Add Block';
+  document.getElementById('delete-btn').classList.toggle('hidden',!isEdit);
+  if(isEdit){const b=schedule[activeDay][idx];document.getElementById('m-time').value=b.time;document.getElementById('m-label').value=b.label;selectedColor=b.color;}
+  else{document.getElementById('m-time').value='';document.getElementById('m-label').value='';selectedColor='personal';}
+  renderColorGrid();
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+function closeModalOutside(e){if(e.target===document.getElementById('modal-overlay'))closeModal();}
+function renderColorGrid(){
+  document.getElementById('color-grid').innerHTML=Object.entries(COLORS).map(([k,v])=>
+    `<div class="color-opt ${k===selectedColor?'selected':''}" style="background:${v.bg};color:${v.text};border-color:${k===selectedColor?'#111':v.border}" onclick="selectColor('${k}')">${v.label}</div>`
+  ).join('');
+}
+function selectColor(c){selectedColor=c;renderColorGrid();}
+function saveBlock(){
+  const time=document.getElementById('m-time').value.trim();
+  const label=document.getElementById('m-label').value.trim();
+  if(!time||!label)return;
+  const block={time,label,color:selectedColor};
+  if(editingIdx!==null)schedule[activeDay][editingIdx]=block;
+  else schedule[activeDay].push(block);
+  save();renderSchedule();closeModal();
+}
+function deleteBlock(){
+  if(editingIdx===null)return;
+  schedule[activeDay].splice(editingIdx,1);
+  save();renderSchedule();closeModal();
+}
+
+// API Key modal
+function openKeyModal(){
+  document.getElementById('api-key-input').value=getKey();
+  document.getElementById('key-modal-overlay').classList.add('open');
+}
+function closeKeyModal(){document.getElementById('key-modal-overlay').classList.remove('open');}
+function closeKeyModalOutside(e){if(e.target===document.getElementById('key-modal-overlay'))closeKeyModal();}
+function saveKey(){
+  const k=document.getElementById('api-key-input').value.trim();
+  if(k)localStorage.setItem('mw_apikey',k);
+  closeKeyModal();
+  checkKeyNotice();
+}
+function clearKey(){
+  localStorage.removeItem('mw_apikey');
+  document.getElementById('api-key-input').value='';
+  closeKeyModal();
+  checkKeyNotice();
+}
+
+// Intentions
+function renderIntentions(){
+  document.getElementById('intentions-cards').innerHTML=INTENTION_AREAS.map(area=>{
+    const val=intentions[area]||'';
+    return `<div class="intention-card">
+      <div class="intention-header">${area}</div>
+      <div class="intention-body">
+        <textarea placeholder="This week I want to..." onchange="saveIntention('${area}',this.value)">${val}</textarea>
+      </div>
+    </div>`;
+  }).join('');
+}
+function saveIntention(area,val){intentions[area]=val;save();}
+
+// Brain dump
+async function planWeek(){
+  const key=getKey();
+  if(!key){openKeyModal();return;}
+  const input=document.getElementById('brain-input').value.trim();
+  if(!input)return;
+  const btn=document.getElementById('plan-btn');
+  btn.disabled=true;btn.textContent='Planning your week...';
+  document.getElementById('result-box').classList.add('hidden');
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:SYSTEM_PROMPT,messages:[{role:'user',content:`Brain dump:\n\n${input}`}]})
+    });
+    const data=await res.json();
+    if(data.error){document.getElementById('result-text').textContent='API error: '+data.error.message;document.getElementById('result-box').classList.remove('hidden');btn.disabled=false;btn.textContent='✨ Plan my week';return;}
+    const text=data.content?.map(b=>b.text||'').join('\n')||'No response.';
+    document.getElementById('result-text').textContent=text;
+    document.getElementById('result-box').classList.remove('hidden');
+  }catch(e){
+    document.getElementById('result-text').textContent='Something went wrong. Check your API key and internet connection.';
+    document.getElementById('result-box').classList.remove('hidden');
+  }
+  btn.disabled=false;btn.textContent='✨ Plan my week';
+}
+
+// Init
+const todayMap={0:'Sun',1:'Mon',2:'Tue',3:'Wed',4:'Thu',5:'Fri',6:'Sat'};
+activeDay=todayMap[new Date().getDay()];
+renderDays();renderLegend();renderSchedule();
+</script>
+</body>
+</html>
